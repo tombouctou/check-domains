@@ -1,0 +1,1 @@
+a) Queries to the Whois database are limited to 30 from any given IP-address in a minute.

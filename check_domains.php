@@ -7,10 +7,10 @@ if (!isset($argv[1])) {
 
 $filename = $argv[1];
 $d_file = file_get_contents($filename);
-$lines = split("\n", $d_file);
+$lines = explode("\n", $d_file);
 
 class DomainChecker {
-    protected static $rmon = array(
+    protected static $rmon = [
         'jan' => '01',
         'feb' => '02',
         'mar' => '03',
@@ -23,8 +23,13 @@ class DomainChecker {
         'oct' => '10',
         'nov' => '11',
         'dec' => '12',
-    );
+    ];
 
+	/**
+	 * Get domain expiry date
+	 * @param string $dt
+	 * @return DateTime
+	 */
     public static function getDate($dt) {
         if (is_int($dt))
             return DateTime::createFromFormat('U', $dt);
@@ -54,14 +59,14 @@ class DomainChecker {
         return $d; 
     }   
 
-    public static $formats = array(
+    public static $formats = [
         'd.m.Y',
         'd-m-Y',
         'd/m/Y',
         'Y-m-d',
         'Y/m/d',
         'Y.m.d',
-    );
+    ];
 
     public static $rxs = [
         "/(Expires( at)?|Renewal date):\s*(?P<DATE>\d{4}-\d{2}-\d{2})/i",
@@ -76,13 +81,18 @@ class DomainChecker {
 
     /**
      * Проверить, не истек ли домен
+	 * @param string $domain
+	 * @param bool $ripnLimit
      * @return bool false, если истек или не удалось установить
      */
-    public static function check($domain) {
+    public static function check($domain, $ripnLimit = true) {
         $w = new whois($domain);
         $info = $w->info();
-        $i_lines = split("\n", $info);
+        $i_lines = explode("\n", $info);
         $matched = false;
+		if ($ripnLimit) {
+			sleep(2);
+		}
         foreach($i_lines as $line) {
             $line = trim($line);
             foreach(static::$rxs as $rx) {
@@ -90,7 +100,7 @@ class DomainChecker {
                 if (preg_match($rx, $line, $matches)) {
                     $matched = true;
                     // debug
-                    // echo "$domain: {$matches['DATE']}\n";
+                    echo "$domain: {$matches['DATE']}\n";
                     if (isset($matches['DATE']) && ($d = static::getDate($matches['DATE']))) {
                         $nd = new DateTime();
                         $days = $nd->diff($d)->days;
@@ -114,6 +124,8 @@ class DomainChecker {
 
     /**
      * Проверить истечение множества доменов
+	 * @param array $domains
+	 * @return bool
      */
     public static function checkMany($domains) {
         $ok = true;
