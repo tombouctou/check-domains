@@ -25,11 +25,11 @@ class DomainChecker {
         'dec' => '12',
     ];
 
-	/**
-	 * Get domain expiry date
-	 * @param string $dt
-	 * @return DateTime
-	 */
+    /**
+     * Get domain expiry date
+     * @param string $dt
+     * @return DateTime
+     */
     public static function getDate($dt) {
         if (is_int($dt))
             return DateTime::createFromFormat('U', $dt);
@@ -80,19 +80,31 @@ class DomainChecker {
     public static $warnLimit = 15;
 
     /**
+     * @param string $domain
+     * @return string
+     */
+    public static function getDomain2($domain) {
+        $parts = explode('.', $domain);
+        $_slice = array_slice( $parts, -2, 1 );
+        $item = reset( $_slice );
+        $slice = ( strlen( $item ) == 2 ) && ( count( $parts ) > 2 ) ? 3 : 2;
+        return implode( '.', array_slice( $parts, ( 0 - $slice ), $slice ) );
+    }
+
+    /**
      * Проверить, не истек ли домен
-	 * @param string $domain
-	 * @param bool $ripnLimit
+     * @param string $domain
+     * @param bool $ripnLimit
      * @return bool false, если истек или не удалось установить
      */
     public static function check($domain, $ripnLimit = true) {
-        $w = new whois($domain);
+        $w = new whois(static::getDomain2($domain));
         $info = $w->info();
         $i_lines = explode("\n", $info);
         $matched = false;
-		if ($ripnLimit) {
-			sleep(2);
-		}
+        if ($ripnLimit) {
+            sleep(2);
+        }
         foreach($i_lines as $line) {
             $line = trim($line);
             foreach(static::$rxs as $rx) {
@@ -124,8 +136,8 @@ class DomainChecker {
 
     /**
      * Проверить истечение множества доменов
-	 * @param array $domains
-	 * @return bool
+     * @param array $domains
+     * @return bool
      */
     public static function checkMany($domains) {
         $ok = true;
